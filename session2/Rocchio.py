@@ -6,10 +6,10 @@ import argparse
 import os
 import codecs
 from elasticsearch_dsl import Index, analyzer, tokenizer
-import glob
 import numpy as np
 import re
 from collections import defaultdict
+from elasticsearch.client import CatClient
 
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
@@ -32,10 +32,11 @@ def search(client, q, k, index=None):
         print('No query parameters passed')
 
 
-def document_term_vector(client, id, index=None):
+def document_term_vector(client, id, index):
     """
     Returns the term vector of a document and its statistics a two sorted list of pairs (word, count)
-    The first one is the frequency of the term in the document
+    The first one is the frequency of the term in the document, the second one is the number of documents
+    that contain the term
 
     :param client:
     :param index:
@@ -46,11 +47,13 @@ def document_term_vector(client, id, index=None):
                                     positions=False, term_statistics=True)
 
     file_td = {}
+    file_df = {}
 
     if 'text' in termvector['term_vectors']:
         for t in termvector['term_vectors']['text']['terms']:
             file_td[t] = termvector['term_vectors']['text']['terms'][t]['term_freq']
-    return sorted(file_td.items())
+            file_df[t] = termvector['term_vectors']['text']['terms'][t]['doc_freq']
+    return sorted(file_td.items()), sorted(file_df.items())
 
 
 # Parse a query and extract the word and weight into 2 list
@@ -76,7 +79,19 @@ def normalize(tw):
     return [(t, w/norm) for t, w in tw]
 
 
-def toTFIDF(fd, df, R):
+
+def doc_count(client, index):
+    """
+    Returns the number of documents in an index
+
+    :param client:
+    :param index:
+    :return:
+    """
+    return int(CatClient(client).count(index=[index], format='json')[0]['count'])
+
+
+def toTFIDF(client, index, file_id):
     """
     Returns the term weights of a document
 
@@ -84,23 +99,23 @@ def toTFIDF(fd, df, R):
     :return:
     """
 
-    tfidf_matrix = []
-    dcount = len(fd)
+    # Get document terms frequency and overall terms document frequency
+    file_tv, file_df = document_term_vector(client, file_id, index)
 
-    for doc in fd:
-        max_freq = max([f for _, f in doc])
+    max_freq = max([f for _, f in file_tv])
 
-        tfidfw = []
-        for t, w in doc:
-            # tfidf = fdi/max fd  * log2 D/df
-            tdidf = w / max_freq * np.log2(dcount / df[t])
-            # Only store non zero weight terms to optimize the computation
-            if tdidf > 0:
-                tfidfw.append((t, tdidf))
-        tfidfw.sort(key= lambda tup: tup[1])
-        tfidf_matrix.append(tfidfw[-R:])
+    dcount = doc_count(client, index)
 
-    return tfidf_matrix
+    tfidfw = []
+    for (t, w),(_, df) in zip(file_tv, file_df):
+        # tfidf = fdi/max fd  * log2 D/df
+        tdidf = w/max_freq * np.log2(dcount/df)
+        # Only store non zero weight terms to optimize the computation
+        if tdidf > 0:
+            tfidfw.append((t, tdidf))
+
+    return tfidfw
+
 
 
 if __name__ == '__main__':
@@ -111,8 +126,8 @@ if __name__ == '__main__':
     # Roccio parameters
     parser.add_argument('--nrounds', default=5, type=int, help='Number of applications of Rocchio’s rule')
     parser.add_argument('--R', default=100, type=int, help='Maximum number of terms to be kept in the new query')
-    parser.add_argument('--alpha', default=0.8, type=float, help='Weight in the Rocchio rule for original query')
-    parser.add_argument('--beta', default=0.5, type=float, help='Weight in the Rocchio rule for relevant document')
+    parser.add_argument('--alpha', default=1, type=float, help='Weight in the Rocchio rule for original query')
+    parser.add_argument('--beta', default=1, type=float, help='Weight in the Rocchio rule for relevant document')
     # **************************************************************************************************************
     parser.add_argument('--query', default=None, nargs=argparse.REMAINDER, help='List of words to search')
 
@@ -127,13 +142,13 @@ if __name__ == '__main__':
     beta = args.beta
 
     print("Receive query", query)
+    q, w = parse_query(query)
     docs = None
     try:
         client = Elasticsearch()
         for ite in range(nrounds):
             print("******************************************************")
             print("iteration", ite + 1)
-            q, w = parse_query(query)
             print("Term vector :", q)
             print("Weight vector :", w)
             query = [term + "^" + str(weight) for term, weight in zip(q, w)]
@@ -141,24 +156,33 @@ if __name__ == '__main__':
             # Find all relevant documents
             docs = search(client, query, k, index)
 
-            fd = []
-            df = defaultdict(int)
-            # For each document, compute the term frequency vector and document frequency
+            # For each document, compute the tf idf and pruning the list. Finally store into a dictionary
+            d = defaultdict(float)
             for doc in docs:
-                tv = document_term_vector(client, doc.meta.id, index=index)
-                # Compute the df from current document set
-                for term, _ in tv:
-                    df[term] += 1
-                fd.append(tv)
-            # Compute tf-idf for current document set
-            # The data structure is a matrix of pair (term, weight)
-            tfidf = toTFIDF(fd, df, R)
-            for k in tfidf:
-                print(k)
+                tfidf = toTFIDF(client, index, doc.meta.id)
+                # Pruning the list
+                tfidf.sort(key= lambda tup: tup[1])
+                tfidf = tfidf[-R:]
+                # After pruning, normalize. Then we can get larger weight.
+                tfidf = normalize(tfidf)
+                # Sum of tfidf, a way to accelerate the process
+                for t, weight in tfidf:
+                    d[t] += weight
 
-
+            # Then we compute new query by apply Rocchio rule
+            new_w = []
+            for term, weight in zip(q, w):
+                new_w.append(weight * alpha + beta * d[term] / k)
+            # Update new w
+            w = new_w
 
     except NotFoundError:
         print('Index %s does not exists' % index)
+
+    print("******************************************************")
+    for r in docs:  # only returns a specific number of results
+        print('ID= %s SCORE=%s' % (r.meta.id, r.meta.score))
+        print('PATH= %s' % r.path)
+        print('-----------------------------------------------------------------')
 
 
