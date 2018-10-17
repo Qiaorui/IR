@@ -90,7 +90,9 @@ def toTFIDF(client, index, file_id):
     for (t, w),(_, df) in zip(file_tv, file_df):
         # tfidf = fdi/max fd  * log2 D/df
         tdidf = w/max_freq * np.log2(dcount/df)
-        tfidfw.append((t, tdidf))
+        # Only store non zero weight terms to optimize the computation
+        if tdidf > 0:
+            tfidfw.append((t, tdidf))
 
     return normalize(tfidfw)
 
