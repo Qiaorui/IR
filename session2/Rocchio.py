@@ -1,22 +1,17 @@
 from __future__ import print_function
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
 from elasticsearch.exceptions import NotFoundError
 import argparse
-import os
-import codecs
-from elasticsearch_dsl import Index, analyzer, tokenizer
 import numpy as np
 import re
 from collections import defaultdict
-from elasticsearch.client import CatClient
 
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
+from TFIDFViewer import normalize, doc_count, document_term_vector
 
 
-
-def search(client, q, k, index=None):
+def search(client, query, k, index=None):
     s = Search(using=client, index=index)
 
     if query is not None:
@@ -32,30 +27,6 @@ def search(client, q, k, index=None):
         print('No query parameters passed')
 
 
-def document_term_vector(client, id, index):
-    """
-    Returns the term vector of a document and its statistics a two sorted list of pairs (word, count)
-    The first one is the frequency of the term in the document, the second one is the number of documents
-    that contain the term
-
-    :param client:
-    :param index:
-    :param id:
-    :return:
-    """
-    termvector = client.termvectors(index=index, doc_type='document', id=id, fields=['text'],
-                                    positions=False, term_statistics=True)
-
-    file_td = {}
-    file_df = {}
-
-    if 'text' in termvector['term_vectors']:
-        for t in termvector['term_vectors']['text']['terms']:
-            file_td[t] = termvector['term_vectors']['text']['terms'][t]['term_freq']
-            file_df[t] = termvector['term_vectors']['text']['terms'][t]['doc_freq']
-    return sorted(file_td.items()), sorted(file_df.items())
-
-
 # Parse a query and extract the word and weight into 2 list
 def parse_query(query):
     q = []
@@ -67,40 +38,10 @@ def parse_query(query):
     return q, w
 
 
-
-def normalize(tw):
-    """
-    Normalizes the weights in t so that they form a unit-length vector
-    It is assumed that not all weights are 0
-    :param tw:
-    :return:
-    """
-    norm = np.sqrt(sum([x*x for _, x in tw]))
-    return [(t, w/norm) for t, w in tw]
-
-
-
-def doc_count(client, index):
-    """
-    Returns the number of documents in an index
-
-    :param client:
-    :param index:
-    :return:
-    """
-    return int(CatClient(client).count(index=[index], format='json')[0]['count'])
-
-
 def toTFIDF(client, index, file_id):
-    """
-    Returns the term weights of a document
-
-    :param file:
-    :return:
-    """
 
     # Get document terms frequency and overall terms document frequency
-    file_tv, file_df = document_term_vector(client, file_id, index)
+    file_tv, file_df = document_term_vector(client, index, file_id)
 
     max_freq = max([f for _, f in file_tv])
 
@@ -115,7 +56,6 @@ def toTFIDF(client, index, file_id):
             tfidfw.append((t, tdidf))
 
     return tfidfw
-
 
 
 if __name__ == '__main__':
@@ -161,7 +101,7 @@ if __name__ == '__main__':
             for doc in docs:
                 tfidf = toTFIDF(client, index, doc.meta.id)
                 # Pruning the list
-                tfidf.sort(key= lambda tup: tup[1])
+                tfidf.sort(key=lambda tup: tup[1])
                 tfidf = tfidf[-R:]
                 # After pruning, normalize. Then we can get larger weight.
                 tfidf = normalize(tfidf)
@@ -184,5 +124,3 @@ if __name__ == '__main__':
         print('ID= %s SCORE=%s' % (r.meta.id, r.meta.score))
         print('PATH= %s' % r.path)
         print('-----------------------------------------------------------------')
-
-
