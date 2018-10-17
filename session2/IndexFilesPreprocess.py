@@ -35,7 +35,6 @@ import argparse
 import os
 import codecs
 from elasticsearch_dsl import Index, analyzer, tokenizer
-import re
 import glob
 
 def generate_files_list(path):

@@ -22,7 +22,6 @@ from elasticsearch.exceptions import NotFoundError
 from elasticsearch.client import CatClient
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
-
 import argparse
 
 import numpy as np
@@ -89,10 +88,9 @@ def toTFIDF(client, index, file_id):
 
     tfidfw = []
     for (t, w),(_, df) in zip(file_tv, file_df):
-        #
-        # Something happens here
-        #
-        pass
+        # tfidf = fdi/max fd  * log2 D/df
+        tdidf = w/max_freq * np.log2(dcount/df)
+        tfidfw.append((t, tdidf))
 
     return normalize(tfidfw)
 
@@ -102,10 +100,8 @@ def print_term_weigth_vector(twv):
     :param twv:
     :return:
     """
-    #
-    # Program something here
-    #
-    pass
+    for t, w in twv:
+        print(t,w)
 
 
 def normalize(tw):
@@ -115,10 +111,8 @@ def normalize(tw):
     :param tw:
     :return:
     """
-    #
-    # Program something here
-    #
-    return None
+    norm = np.sqrt(sum([x*x for _, x in tw]))
+    return [(t, w/norm) for t, w in tw]
 
 
 def cosine_similarity(tw1, tw2):
@@ -128,10 +122,28 @@ def cosine_similarity(tw1, tw2):
     :param tw2:
     :return:
     """
-    #
-    # Program something here
-    #
-    return 0
+    tw1 = normalize(tw1)
+    tw2 = normalize(tw2)
+    # Since two list may have different length, we have to do check pair by pair if they are same term
+    # If so, we compute the product and add to the similarity value
+    len1 = len(tw1)
+    len2 = len(tw2)
+    i = j = 0
+
+    sim = 0
+    while i < len1 and j < len2:
+        t1, w1 = tw1[i]
+        t2, w2 = tw2[j]
+        if t1 < t2:
+            i += 1
+        elif t1 > t2:
+            j += 1
+        else:
+            sim += w1*w2
+            i += 1
+            j += 1
+    return sim
+
 
 def doc_count(client, index):
     """
@@ -142,6 +154,7 @@ def doc_count(client, index):
     :return:
     """
     return int(CatClient(client).count(index=[index], format='json')[0]['count'])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
