@@ -99,14 +99,15 @@ def computePageRanks():
         index += 1
     n = len(airportHash)
     P = np.array([1.0/n] * n, np.float64)
-    L = 1.0
-    maxiter = 100
+    L = 0.8
+    maxiter = 1000
     iter = 0
-    epsilon = 1e-3
+    epsilon = 1e-5
     difference = n
     #try:
     while (iter < maxiter and difference > epsilon):
         iter += 1
+        print(iter)
         print(sum(P))
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
@@ -116,9 +117,9 @@ def computePageRanks():
             # if airport has no outgoing edge, we have to distribute its pagerank to all
             # nodes including itself
             if airport.outweight == 0:
-                auxP = P[indexDest]/n
+                auxP = L * P[indexDest]/n
                 Q += auxP
-            suma = 0.0 
+            suma = 0.0
             # airports with no incoming edge does not matter since its rank is 0 + (1-L)/n
             for originCode, routeWeight in airport.routeHash.iteritems():
                 indexOrig = airportIndices[originCode]
