@@ -78,18 +78,23 @@ def readRoutes(fd):
                     airportHash[destination].routeHash[e.origin] += 1
                 else:
                     airportHash[destination].routeHash[e.origin] = 1
+                """
                 edgeList.append(e)
                 if e.origin+destination not in edgeHash:
                     edgeHash[e.origin+destination] = 1
                 else:
                     edgeHash[e.origin+destination] += 1
+                """
         except Exception:
             pass
     routesTxt.close()
+    # normalize weights of edges
+    for code, airport in airportHash.iteritems():
+        for originCode, routeWeight in airport.routeHash.iteritems():
+            airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight             
     print "There were {0} routes with IATA codes that exist".format(cont)
 
 def computePageRanks():
-    # write your code
     # a dictionary which stores the index of each airport and viceversa
     airportIndices = dict()
     index = 0
@@ -99,16 +104,16 @@ def computePageRanks():
         index += 1
     n = len(airportHash)
     P = np.array([1.0/n] * n, np.float64)
-    L = 0.8
-    maxiter = 1000
+    L = 0.9
+    maxiter = 10
     iter = 0
-    epsilon = 1e-5
+    epsilon = 1e-4
     difference = n
     #try:
     while (iter < maxiter and difference > epsilon):
         iter += 1
-        print(iter)
-        print(sum(P))
+        #print(iter)
+        #print(sum(P))
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
         Q = np.array([0.0] * n, np.float64)
@@ -120,13 +125,13 @@ def computePageRanks():
                 auxP = L * P[indexDest]/n
                 Q += auxP
             suma = 0.0
-            # airports with no incoming edge does not matter since its rank is 0 + (1-L)/n
+            # airports with no incoming edge do not matter since its rank is 0 + (1-L)/n
             for originCode, routeWeight in airport.routeHash.iteritems():
                 indexOrig = airportIndices[originCode]
-                suma += P[indexOrig] * routeWeight / airportHash[originCode].outweight 
+                suma += P[indexOrig] * routeWeight 
             Q[indexDest] += L * suma + (1 - L)/n
         difference = np.linalg.norm(P - Q, 2)
-        print(difference)
+        #print(difference)
         P = Q
     for idx, val in enumerate(P):
         airportHash[airportIndices[idx]].pageIndex = val 
@@ -135,10 +140,10 @@ def computePageRanks():
      #   print(inst)
     
 def outputPageRanks():
-    # write your code
     # order the dictionary decreasingly by the pageIndex
     #sorted_d = sorted(airportHash.items(), key=lambda (k, v): v.pageIndex, reverse=True)
     sortedAirports = [(value.code, value.pageIndex) for (key, value) in sorted(airportHash.items(), key=lambda (k, v): v.pageIndex, reverse=True)]
+    #sortedAirports = sorted([(value.pageIndex, key) for (key,value) in airportHash.items()], reverse=True)
     print(sortedAirports[1:10])
     
 def main(argv=None):
