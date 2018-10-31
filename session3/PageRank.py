@@ -1,16 +1,14 @@
 #!/usr/bin/python
 
 from pathlib import Path
-from collections import namedtuple
 import time
-import sys
 import numpy as np
 import argparse
 
 
 class Edge:
     def __init__(self, origin=None):
-        self.origin = None  # write appropriate value
+        self.origin = origin  # write appropriate value
         self.weight = 1  # write appropriate value
 
     def __repr__(self):
@@ -30,10 +28,10 @@ class Airport:
         return "{0}\t{2}\t{1}".format(self.code, self.name, self.pageIndex)
 
 
-edgeList = [] # list of Edge
-edgeHash = dict() # hash of edge to ease the match
-airportList = [] # list of Airport
-airportHash = dict() # hash key IATA code -> Airport
+edgeList = []           # list of Edge
+edgeHash = dict()       # hash of edge to ease the match
+airportList = []        # list of Airport
+airportHash = dict()    # hash key IATA code -> Airport
 
 
 def read_airports(fd):
@@ -48,7 +46,7 @@ def read_airports(fd):
                 raise Exception('not an IATA code')
             a.name = temp[1][1:-1] + ", " + temp[3][1:-1]
             a.code = temp[4][1:-1]
-        except Exception as inst:
+        except Exception:
             pass
         else:
             cont += 1
@@ -59,8 +57,7 @@ def read_airports(fd):
 
 
 def read_routes(fd):
-    print ("Reading Routes file from {0}".format(fd))
-    # write your code
+    print("Reading Routes file from {0}".format(fd))
     routes_file = open(fd, "r")
     cont = 0
     for line in routes_file.readlines():
@@ -97,7 +94,7 @@ def read_routes(fd):
     for code, airport in airportHash.items():
         for originCode, routeWeight in airport.routeHash.items():
             airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight             
-    print ("There were {0} routes with IATA codes that exist".format(cont))
+    print("There were {0} routes with IATA codes that exist".format(cont))
 
 
 def compute_page_ranks(L, maxiter, epsilon, verbose):
@@ -111,12 +108,11 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
     n = len(airportHash)
     P = np.array([1.0/n] * n, np.float64)
 
-    iter = 0
+    i = 0
     difference = n
-    #try:
-    while (iter < maxiter and difference > epsilon):
-        iter += 1
-        #print(iter)
+    while (i < maxiter and difference > epsilon):
+        i += 1
+        #print(i)
         #print(sum(P))
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
@@ -139,9 +135,7 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
         P = Q
     for idx, val in enumerate(P):
         airportHash[airportIndices[idx]].pageIndex = val 
-    return iter
-    #except Exception as inst:
-     #   print(inst)
+    return i
 
 
 def outputPageRanks():
@@ -156,7 +150,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-path", default=".", help="Input file directory path")
     parser.add_argument("-max", default="1000", type=int, help="Maximum iteration for Page rank", action="store")
-    parser.add_argument("-eps", default="0.0001", type=float, help="Epsilon as threshold for convergence", action="store")
+    parser.add_argument("-eps", default="0.0001", type=float, help="Threshold for convergence", action="store")
     parser.add_argument("-df", default="0.9", type=float, help="Dumping factor", action="store")
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
     parser.add_argument("-w", dest="output_file", action="store", help="write to file")
@@ -168,13 +162,13 @@ def main():
 
     read_airports((data_folder / "airports.txt").absolute())
     read_routes((data_folder / "routes.txt").absolute())
-    
+
     time1 = time.time()
     iterations = compute_page_ranks(args.df, args.max, args.eps, args.verbose)
     time2 = time.time()
     outputPageRanks()
     print("#Iterations:", iterations)
-    print("Time of computePageRanks():", time2-time1)
+    print("Time of computePageRanks: {0:.4f} seconds".format(time2-time1))
     
 
 if __name__ == "__main__":
