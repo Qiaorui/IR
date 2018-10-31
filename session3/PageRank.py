@@ -32,7 +32,7 @@ airportList = [] # list of Airport
 airportHash = dict() # hash key IATA code -> Airport
 
 def readAirports(fd):
-    print "Reading Airport file from {0}".format(fd)
+    print ("Reading Airport file from {0}".format(fd))
     airportsTxt = open(fd, "r")
     cont = 0
     for line in airportsTxt.readlines():
@@ -50,11 +50,11 @@ def readAirports(fd):
             airportList.append(a)
             airportHash[a.code] = a
     airportsTxt.close()
-    print "There were {0} Airports with IATA code".format(cont)
+    print ("There were {0} Airports with IATA code".format(cont))
 
 
 def readRoutes(fd):
-    print "Reading Routes file from {0}".format(fd)
+    print ("Reading Routes file from {0}".format(fd))
     # write your code
     routesTxt = open(fd, "r")
     cont = 0
@@ -89,16 +89,16 @@ def readRoutes(fd):
             pass
     routesTxt.close()
     # normalize weights of edges
-    for code, airport in airportHash.iteritems():
-        for originCode, routeWeight in airport.routeHash.iteritems():
+    for code, airport in airportHash.items():
+        for originCode, routeWeight in airport.routeHash.items():
             airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight             
-    print "There were {0} routes with IATA codes that exist".format(cont)
+    print ("There were {0} routes with IATA codes that exist".format(cont))
 
 def computePageRanks():
     # a dictionary which stores the index of each airport and viceversa
     airportIndices = dict()
     index = 0
-    for code, airport in airportHash.iteritems():
+    for code, airport in airportHash.items():
         airportIndices[code] = index
         airportIndices[index] = code 
         index += 1
@@ -117,7 +117,7 @@ def computePageRanks():
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
         Q = np.array([0.0] * n, np.float64)
-        for code, airport in airportHash.iteritems():
+        for code, airport in airportHash.items():
             indexDest = airportIndices[code]
             # if airport has no outgoing edge, we have to distribute its pagerank to all
             # nodes including itself
@@ -126,7 +126,7 @@ def computePageRanks():
                 Q += auxP
             suma = 0.0
             # airports with no incoming edge do not matter since its rank is 0 + (1-L)/n
-            for originCode, routeWeight in airport.routeHash.iteritems():
+            for originCode, routeWeight in airport.routeHash.items():
                 indexOrig = airportIndices[originCode]
                 suma += P[indexOrig] * routeWeight 
             Q[indexDest] += L * suma + (1 - L)/n
@@ -142,7 +142,7 @@ def computePageRanks():
 def outputPageRanks():
     # order the dictionary decreasingly by the pageIndex
     #sorted_d = sorted(airportHash.items(), key=lambda (k, v): v.pageIndex, reverse=True)
-    sortedAirports = [(value.code, value.pageIndex) for (key, value) in sorted(airportHash.items(), key=lambda (k, v): v.pageIndex, reverse=True)]
+    sortedAirports = [(value.code, value.pageIndex) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pageIndex, reverse=True)]
     #sortedAirports = sorted([(value.pageIndex, key) for (key,value) in airportHash.items()], reverse=True)
     print(sortedAirports[1:10])
     
@@ -154,8 +154,8 @@ def main(argv=None):
     iterations = computePageRanks()
     time2 = time.time()
     outputPageRanks()
-    print "#Iterations:", iterations
-    print "Time of computePageRanks():", time2-time1
+    print ("#Iterations:", iterations)
+    print ("Time of computePageRanks():", time2-time1)
     
 
 if __name__ == "__main__":
