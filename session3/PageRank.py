@@ -6,32 +6,19 @@ import numpy as np
 import argparse
 
 
-class Edge:
-    def __init__(self, origin=None):
-        self.origin = origin  # write appropriate value
-        self.weight = 1  # write appropriate value
-
-    def __repr__(self):
-        return "edge: {0} {1}".format(self.origin, self.weight)
+airportHash = dict()    # hash key IATA code -> Airport
 
 
 class Airport:
     def __init__(self, iden=None, name=None):
         self.code = iden
         self.name = name
-        self.routes = []
         self.routeHash = dict()
         self.outweight = 0  # write appropriate value
         self.pagerank = 0
 
     def __repr__(self):
         return "{0}\t{2}\t{1}".format(self.code, self.name, self.pagerank)
-
-
-#edgeList = []           # list of Edge
-#edgeHash = dict()       # hash of edge to ease the match
-#airportList = []        # list of Airport
-airportHash = dict()    # hash key IATA code -> Airport
 
 
 def read_airports(fd):
@@ -50,7 +37,6 @@ def read_airports(fd):
             pass
         else:
             cont += 1
-            #airportList.append(a)
             airportHash[a.code] = a
     airports_file.close()
     print("There were {0} Airports with IATA code".format(cont))
@@ -61,32 +47,23 @@ def read_routes(fd):
     routes_file = open(fd, "r")
     cont = 0
     for line in routes_file.readlines():
-        e = Edge()
         try:
             temp = line.split(',')
             if len(temp[2]) != 3 or len(temp[4]) != 3:
                 raise Exception('not an IATA code')
-            e.origin = temp[2]
+            origin = temp[2]
             destination = temp[4]
             # check if aiports codes exist in the airport file
-            if e.origin in airportHash and destination in airportHash:
+            if origin in airportHash and destination in airportHash:
                 cont += 1
                 # increment the outweight of origin airport
-                airportHash[e.origin].outweight += 1
-                # append the routes list
-                airportHash[destination].routes.append(e)
+                airportHash[origin].outweight += 1
                 # append routeHash of the destination airport if the
-                if e.origin in airportHash[destination].routeHash:
-                    airportHash[destination].routeHash[e.origin] += 1
+                if origin in airportHash[destination].routeHash:
+                    airportHash[destination].routeHash[origin] += 1
                 else:
-                    airportHash[destination].routeHash[e.origin] = 1
-                """
-                edgeList.append(e)
-                if e.origin+destination not in edgeHash:
-                    edgeHash[e.origin+destination] = 1
-                else:
-                    edgeHash[e.origin+destination] += 1
-                """
+                    airportHash[destination].routeHash[origin] = 1
+
         except Exception:
             pass
     routes_file.close()
