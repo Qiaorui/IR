@@ -75,7 +75,7 @@ def read_routes(fd):
     print("There were {0} routes with IATA codes that exist".format(cont))
 
 
-def compute_page_ranks(L, maxiter, epsilon, verbose):
+def compute_page_ranks(L, maxiter, epsilon):
     # a dictionary which stores the index of each airport and viceversa
     airportIndices = dict()
     index = 0
@@ -114,16 +114,11 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
     return i
 
 
-def outputPageRanks(output_file=None):
+def outputPageRanks():
     # order the dictionary decreasingly by the pageIndex
-    sortedAirports = [(value.code, value.pagerank) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pagerank, reverse=True)]
-    if output_file is not None:
-        f = open(output_file, "w")
-
-    for code, rank in sortedAirports:
-        print("{}, {:.6f}".format(code, rank))
-        if output_file is not None:
-            f.write("{}, {:.6f}\n".format(code, rank))
+    sortedAirports = [(value.name, value.pagerank) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pagerank, reverse=True)]
+    for name, rank in sortedAirports:
+        print("{:.7f}, {}".format(rank, name))
 
 
 def main():
@@ -132,8 +127,6 @@ def main():
     parser.add_argument("-i", default="1000", type=int, help="Maximum iteration for Page rank", action="store")
     parser.add_argument("-e", default="0.0001", type=float, help="Threshold for convergence", action="store")
     parser.add_argument("-df", default="0.9", type=float, help="Dumping factor", action="store")
-    parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
-    parser.add_argument("-w", dest="output_file", action="store", help="write to file")
     args = parser.parse_args()
 
     data_folder = Path(args.path)
@@ -144,9 +137,9 @@ def main():
     read_routes((data_folder / "routes.txt").absolute())
 
     time1 = time.time()
-    iterations = compute_page_ranks(args.df, args.i, args.e, args.verbose)
+    iterations = compute_page_ranks(args.df, args.i, args.e)
     time2 = time.time()
-    outputPageRanks(args.output_file)
+    outputPageRanks()
     print("#Iterations:", iterations)
     print("Time of computePageRanks: {0:.4f} seconds".format(time2-time1))
     
