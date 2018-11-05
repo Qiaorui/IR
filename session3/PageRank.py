@@ -91,14 +91,10 @@ def read_routes(fd):
             pass
     routes_file.close()
     # normalize weights of edges
-    tmp = 0
-
     for code, airport in airportHash.items():
         for originCode, routeWeight in airport.routeHash.items():
             airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight
-            tmp += float(routeWeight) / airportHash[originCode].outweight
 
-    print("sum: ", tmp)
     print("There were {0} routes with IATA codes that exist".format(cont))
 
 
@@ -118,8 +114,6 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
     difference = n
     while (i < maxiter and difference > epsilon):
         i += 1
-        #print(i)
-        #print(sum(P))
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
         Q = np.array([0.0] * n, np.float64)
@@ -137,23 +131,22 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
                 suma += P[indexOrig] * routeWeight 
             Q[indexDest] += L * suma + k
         difference = np.linalg.norm(P - Q, 2)
-        #print(difference)
         P = Q
     for idx, val in enumerate(P):
         airportHash[airportIndices[idx]].pagerank = val
     return i
 
 
-def outputPageRanks(output_file = None):
+def outputPageRanks(output_file=None):
     # order the dictionary decreasingly by the pageIndex
     sortedAirports = [(value.code, value.pagerank) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pagerank, reverse=True)]
     if output_file is not None:
         f = open(output_file, "w")
 
     for code, rank in sortedAirports:
-        print("{}, {}".format(code, rank))
+        print("{}, {:.6f}".format(code, rank))
         if output_file is not None:
-            f.write("{}, {}\n".format(code, rank))
+            f.write("{}, {:.6f}\n".format(code, rank))
 
 
 def main():
@@ -172,12 +165,6 @@ def main():
 
     read_airports((data_folder / "airports.txt").absolute())
     read_routes((data_folder / "routes.txt").absolute())
-
-    cc = 0
-    for k, v in airportHash.items():
-        if v.outweight > 0 or len(v.routes) > 0:
-            cc += 1
-    print("valid airport: ", cc)
 
     time1 = time.time()
     iterations = compute_page_ranks(args.df, args.i, args.e, args.verbose)
