@@ -125,8 +125,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-path", default=".", help="Input file directory path")
     parser.add_argument("-i", default="1000", type=int, help="Maximum iteration for Page rank", action="store")
-    parser.add_argument("-e", default="0.0001", type=float, help="Threshold for convergence", action="store")
-    parser.add_argument("-df", default="0.9", type=float, help="Dumping factor", action="store")
+    parser.add_argument("-e", default="0.00001", type=float, help="Threshold for convergence", action="store")
+    parser.add_argument("-df", default="0.9", type=float, help="Damping factor", action="store")
     args = parser.parse_args()
 
     data_folder = Path(args.path)
