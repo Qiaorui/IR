@@ -22,15 +22,15 @@ class Airport:
         self.routes = []
         self.routeHash = dict()
         self.outweight = 0  # write appropriate value
-        self.pageIndex = 0
+        self.pagerank = 0
 
     def __repr__(self):
-        return "{0}\t{2}\t{1}".format(self.code, self.name, self.pageIndex)
+        return "{0}\t{2}\t{1}".format(self.code, self.name, self.pagerank)
 
 
-edgeList = []           # list of Edge
-edgeHash = dict()       # hash of edge to ease the match
-airportList = []        # list of Airport
+#edgeList = []           # list of Edge
+#edgeHash = dict()       # hash of edge to ease the match
+#airportList = []        # list of Airport
 airportHash = dict()    # hash key IATA code -> Airport
 
 
@@ -50,7 +50,7 @@ def read_airports(fd):
             pass
         else:
             cont += 1
-            airportList.append(a)
+            #airportList.append(a)
             airportHash[a.code] = a
     airports_file.close()
     print("There were {0} Airports with IATA code".format(cont))
@@ -91,9 +91,14 @@ def read_routes(fd):
             pass
     routes_file.close()
     # normalize weights of edges
+    tmp = 0
+
     for code, airport in airportHash.items():
         for originCode, routeWeight in airport.routeHash.items():
-            airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight             
+            airport.routeHash[originCode] = float(routeWeight) / airportHash[originCode].outweight
+            tmp += float(routeWeight) / airportHash[originCode].outweight
+
+    print("sum: ", tmp)
     print("There were {0} routes with IATA codes that exist".format(cont))
 
 
@@ -107,6 +112,7 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
         index += 1
     n = len(airportHash)
     P = np.array([1.0/n] * n, np.float64)
+    k = (1 - L)/n  # Constant value
 
     i = 0
     difference = n
@@ -129,28 +135,32 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
             for originCode, routeWeight in airport.routeHash.items():
                 indexOrig = airportIndices[originCode]
                 suma += P[indexOrig] * routeWeight 
-            Q[indexDest] += L * suma + (1 - L)/n
+            Q[indexDest] += L * suma + k
         difference = np.linalg.norm(P - Q, 2)
         #print(difference)
         P = Q
     for idx, val in enumerate(P):
-        airportHash[airportIndices[idx]].pageIndex = val 
+        airportHash[airportIndices[idx]].pagerank = val
     return i
 
 
-def outputPageRanks():
+def outputPageRanks(output_file = None):
     # order the dictionary decreasingly by the pageIndex
-    #sorted_d = sorted(airportHash.items(), key=lambda (k, v): v.pageIndex, reverse=True)
-    sortedAirports = [(value.code, value.pageIndex) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pageIndex, reverse=True)]
-    #sortedAirports = sorted([(value.pageIndex, key) for (key,value) in airportHash.items()], reverse=True)
-    print(sortedAirports[1:10])
+    sortedAirports = [(value.code, value.pagerank) for (key, value) in sorted(airportHash.items(), key=lambda tup: tup[1].pagerank, reverse=True)]
+    if output_file is not None:
+        f = open(output_file, "w")
+
+    for code, rank in sortedAirports:
+        print("{}, {}".format(code, rank))
+        if output_file is not None:
+            f.write("{}, {}\n".format(code, rank))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-path", default=".", help="Input file directory path")
-    parser.add_argument("-max", default="1000", type=int, help="Maximum iteration for Page rank", action="store")
-    parser.add_argument("-eps", default="0.0001", type=float, help="Threshold for convergence", action="store")
+    parser.add_argument("-i", default="1000", type=int, help="Maximum iteration for Page rank", action="store")
+    parser.add_argument("-e", default="0.0001", type=float, help="Threshold for convergence", action="store")
     parser.add_argument("-df", default="0.9", type=float, help="Dumping factor", action="store")
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
     parser.add_argument("-w", dest="output_file", action="store", help="write to file")
@@ -163,10 +173,16 @@ def main():
     read_airports((data_folder / "airports.txt").absolute())
     read_routes((data_folder / "routes.txt").absolute())
 
+    cc = 0
+    for k, v in airportHash.items():
+        if v.outweight > 0 or len(v.routes) > 0:
+            cc += 1
+    print("valid airport: ", cc)
+
     time1 = time.time()
-    iterations = compute_page_ranks(args.df, args.max, args.eps, args.verbose)
+    iterations = compute_page_ranks(args.df, args.i, args.e, args.verbose)
     time2 = time.time()
-    outputPageRanks()
+    outputPageRanks(args.output_file)
     print("#Iterations:", iterations)
     print("Time of computePageRanks: {0:.4f} seconds".format(time2-time1))
     
