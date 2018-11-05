@@ -89,7 +89,7 @@ def compute_page_ranks(L, maxiter, epsilon, verbose):
 
     i = 0
     difference = n
-    while (i < maxiter and difference > epsilon):
+    while i < maxiter and difference > epsilon:
         i += 1
         if abs(sum(P)-1.0) > 1e-10:
             raise Exception('sum of pagerank not equals to 1')
