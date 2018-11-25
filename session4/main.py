@@ -23,16 +23,21 @@ def calculate_avg_sp_length(n):
             print("Random graph not connected, trying again")
             continue
         break
+    with open('output.txt', 'a') as f:
+        f.write("node :{}\t\tedge:{}\t\tp:{}\t\tsp:{}\n".format(n, m, p, sp))
     print("node :{}\t\tedge:{}\t\tp:{}\t\tsp:{}".format(n, m, p, sp))
     return sp
 
 
 if __name__ == '__main__':
     print("Building ER model")
-    nodes = [10 * 2 ** i for i in range(21)]
-    sp = []
-    for n in nodes:
-        sp.append(calculate_avg_sp_length(n))
+    nodes = [10 * 2 ** i for i in range(16)]
+
+    pool = multiprocessing.Pool()
+    result = pool.map_async(calculate_avg_sp_length, nodes)
+    pool.close()
+    pool.join()
+    sp = result.get()
 
     plt.plot(nodes, sp, 'o-')
     plt.ylabel("average shortest path")
