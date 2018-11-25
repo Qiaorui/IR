@@ -5,7 +5,7 @@ import multiprocessing
 from networkx import nx
 import math
 
-E = 0.4
+E = 0.05
 
 
 def find_p(n):
@@ -15,8 +15,14 @@ def find_p(n):
 def calculate_avg_sp_length(n):
     p = find_p(n)
     m = math.ceil(n * (n - 1) / 2 * p)
-    G = nx.gnm_random_graph(n, m)
-    sp = nx.average_shortest_path_length(G)
+    while True:
+        try:
+            G = nx.gnm_random_graph(n, m)
+            sp = nx.average_shortest_path_length(G)
+        except nx.NetworkXError:
+            print("Random graph not connected, trying again")
+            continue
+        break
     print("node :{}\t\tedge:{}\t\tp:{}\t\tsp:{}".format(n, m, p, sp))
     return sp
 
