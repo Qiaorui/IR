@@ -23,7 +23,7 @@ def calculate_avg_sp_length(n):
 
 if __name__ == '__main__':
     print("Building ER model")
-    nodes = [10 * 2 ** i for i in range(4)]
+    nodes = [10 * 2 ** i for i in range(21)]
     sp = []
     for n in nodes:
         sp.append(calculate_avg_sp_length(n))
