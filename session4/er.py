@@ -38,10 +38,10 @@ if __name__ == '__main__':
     nodes = [10 * 2 ** i for i in range(args.max)]
 
     pool = multiprocessing.Pool()
-    result = pool.map_async(calculate_avg_sp_length, nodes)
+    result = pool.map(calculate_avg_sp_length, nodes)
     pool.close()
     pool.join()
-    sp = result.get()
+    sp = result
 
     plt.plot(nodes, sp, 'o-')
     plt.ylabel("average shortest path")
