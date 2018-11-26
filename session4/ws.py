@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import multiprocessing
 from networkx import nx
-import math
 import argparse
 
 K = 0
