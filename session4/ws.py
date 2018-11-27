@@ -42,8 +42,9 @@ if __name__ == '__main__':
 
     max_sp, max_cl = compute(0)
 
-    plt.plot(p, [s / max_sp for s in sp], 's')
-    plt.plot(p, [c / max_cl for c in cl], 'D')
+    plt.plot(p, [s / max_sp for s in sp], 's', label="shortest path length")
+    plt.plot(p, [c / max_cl for c in cl], 'D', label="clustering coefficient")
     plt.xlabel("p")
     plt.xscale('log')
+    plt.legend()
     plt.show()
