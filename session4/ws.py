@@ -16,7 +16,7 @@ def compute(p):
         except nx.NetworkXError:
             continue
         break
-    print("{:>12} {:>12} {:>12} {:12.6f} {:12.6f}".format(N, K, p, sp, cl))
+    print("{:>12} {:>12} {:12.6f} {:12.6f} {:12.6f}".format(N, K, p, sp, cl))
     return sp, cl
 
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     print("Building WS model")
     print("{:>12} {:>12} {:>12} {:>12} {:>12}".format("node", "k", "p", "sp", "cl"))
-    p = [1 / 2 ** i for i in range(args.max, -1, -1)]
+    p = [1 / 1.5 ** i for i in range(args.max, -1, -1)]
 
     pool = multiprocessing.Pool()
     result = pool.map(compute, p)
