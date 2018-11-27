@@ -45,6 +45,5 @@ if __name__ == '__main__':
     plt.plot(nodes, sp, 'o-')
     plt.ylabel("average shortest path")
     plt.xlabel("num nodes")
-    plt.xlim(0, max(nodes))
     plt.ylim(0, math.ceil(max(sp)))
     plt.show()
