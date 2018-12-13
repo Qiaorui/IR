@@ -5,10 +5,11 @@ mapper = Code("""
 function() {
     for (var i = 0; i < this.items.length; i++) {
         emit(this.items[i],1);
-
         for (var j = i + 1; j < this.items.length; j++) {
             if (this.items[i] < this.items[j]) {
                 emit({word1: this.items[i], word2: this.items[j]}, 1);
+            } else {
+                emit({word1: this.items[j], word2: this.items[i]}, 1);
             }
         }
     }
@@ -40,11 +41,12 @@ if __name__ == '__main__':
     db = client.ir
 
     try:
+        """
         if "market" in db.collections_names():
             db.market.remove()
         if "counts" in db.collections_names():
             db.counts.remove()
-
+        """
         print("****************** Reading Data ******************")
         read("groceries.csv")
         print(db.market.count(), "documents have been inserted")

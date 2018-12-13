@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import argparse
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', default=0.01, type=float, help='Support threshold')
@@ -27,10 +28,11 @@ if __name__ == '__main__':
     N = db.market.count()
     for key, value in pairs.items():
         sup[key] = value / N
+        sup[key[1], key[0]] = value / N
         conf[key[0], key[1]] = value / items[key[0]]
         conf[key[1], key[0]] = value / items[key[1]]
 
-    filtered_rules = [rule for rule in sup.keys() if sup[rule] > s and conf[rule] > c]
+    filtered_rules = [rule for rule in sup.keys() if sup[rule] >= s and conf[rule] >= c]
     for r in filtered_rules:
         print(r)
     print("Number of association rules ", len(filtered_rules))
