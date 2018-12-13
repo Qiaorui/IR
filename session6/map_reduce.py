@@ -14,7 +14,7 @@ function() {
         }
     }
 }
-              """)
+""")
 
 reducer = Code("""
 function(key,values) {
@@ -24,7 +24,7 @@ function(key,values) {
     }
         return total;
 }
-               """)
+""")
 
 
 def read(path):
@@ -83,6 +83,7 @@ if __name__ == '__main__':
         for comb in sup.keys():
             rule = {"rule": comb, "confidence": conf[comb], "support": sup[comb]}
             db.rules.insert(rule)
+
         print(db.rules.count(), "rules have been inserted")
 
     except Exception as e:

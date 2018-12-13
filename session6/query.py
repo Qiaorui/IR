@@ -13,6 +13,20 @@ if __name__ == '__main__':
     client = MongoClient()
     db = client.ir
 
+    results = db.rules.find(
+        {"$and":
+             [
+                 {"support":
+                      {"$gte": s}
+                  },
+                 {"confidence":
+                      {"$gte": c}
+                  }
+             ]
+        }
+    )
 
+    for rule in results:
+        print(rule)
 
-
+    print(results.count(), "rules meets the threshold")
