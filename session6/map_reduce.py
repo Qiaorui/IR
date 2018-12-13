@@ -47,7 +47,7 @@ if __name__ == '__main__':
         if "counts" in db.list_collection_names():
             db.counts.remove()
         if "rules" in db.list_collection_names():
-            db.counts.remove()
+            db.rules.remove()
 
         print("****************** Reading Data ******************")
         read("groceries.csv")
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
         # Write the computed association rules into mongo
         for comb in sup.keys():
-            rule = {"rule": comb, "confidence": conf[comb], "support": sup[comb]}
+            rule = {"rule": {"if": comb[0], "then": comb[1]}, "confidence": conf[comb], "support": sup[comb]}
             db.rules.insert(rule)
 
         print(db.rules.count(), "rules have been inserted")
