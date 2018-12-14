@@ -1,0 +1,18 @@
+
+|  Row|  Support| Confidence|   Nr. of association|
+|    1|     0.01|       0.01|                  426|
+|    2|     0.01|       0.25|                   96|
+|    3|     0.01|        0.5|                    0|
+|    4|     0.01|       0.75|                    0|
+|    5|     0.05|       0.25|                    4|
+|    6|     0.07|       0.25|                    2|
+|    7|      0.2|       0.25|                    0|
+|    8|      0.5|       0.25|                    0|
+********************** Row 4 **********************
+0 rules meets the threshold
+********************** Row 5 **********************
+{'_id': ObjectId('5c12e5760139e13794638ce9'), 'rule': {'if': 'other vegetables', 'then': 'whole milk'}, 'confidence': 0.38675775091960063, 'support': 0.07483477376715811}
+{'_id': ObjectId('5c12e5760139e13794638cea'), 'rule': {'if': 'whole milk', 'then': 'other vegetables'}, 'confidence': 0.29287703939514526, 'support': 0.07483477376715811}
+{'_id': ObjectId('5c12e5770139e137946392d1'), 'rule': {'if': 'rolls/buns', 'then': 'whole milk'}, 'confidence': 0.30790491984521834, 'support': 0.05663446873411286}
+{'_id': ObjectId('5c12e5780139e137946397f6'), 'rule': {'if': 'yogurt', 'then': 'whole milk'}, 'confidence': 0.40160349854227406, 'support': 0.05602440264361973}
+4 rules meets the threshold
