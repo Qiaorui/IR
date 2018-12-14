@@ -16,3 +16,9 @@ do
     printf '| %+4s| %+8s| %+10s| %+20s| \n' $((i+1)) ${support[$i]} ${confidence[$i]} ${N_Associations}
 done
 
+echo "********************** Row 4 **********************"
+/usr/local/bin/python3 query.py -s 0.01 -c 0.75
+
+
+echo "********************** Row 5 **********************"
+/usr/local/bin/python3 query.py -s 0.05 -c 0.25
